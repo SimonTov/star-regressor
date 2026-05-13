@@ -1,0 +1,21 @@
+# Dataset (demasiado grande para el repo)
+data/
+
+# Modelo entrenado y artefactos
+models/
+results/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
