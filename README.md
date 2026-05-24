@@ -68,39 +68,233 @@ y guárdalo como `data/amazon_reviews.csv`.
 
 ## Uso
 
-### 1. EDA
+REQUISITOS PREVIOS
+----------------------------------------------------------------
+- Python 3.10 o superior instalado
+- Cuenta en Kaggle con API token configurado
+- Conexion a internet (para descargar el dataset y los embeddings)
+- La carpeta del proyecto debe ser:
+    C:\Users\SIMON\Downloads\star-regressor\star-regressor
 
-```bash
-python eda.py --data data/amazon_reviews.csv
-```
 
-Genera gráficas en `images/`: distribución de ratings, longitud de reseñas, boxplots.
 
-### 2. Entrenamiento
+PASO 0 — ABRIR LA TERMINAL EN LA CARPETA CORRECTA
+=
 
-```bash
-# Modelo por defecto: Ridge Regression con embeddings all-MiniLM-L6-v2
-python train.py --data data/amazon_reviews.csv
+1. Abrir PowerShell o CMD
+2. Navegar a la carpeta del proyecto:
 
-# Alternativas de modelo: ridge | gbr (Gradient Boosting) | rf (Random Forest)
-python train.py --data data/amazon_reviews.csv --model gbr
+   cd C:\Users\SIMON\Downloads\star-regressor\star-regressor
 
-# Usar un embedder diferente (más grande, más lento, posiblemente mejor)
-python train.py --data data/amazon_reviews.csv \
-    --embedder sentence-transformers/all-mpnet-base-v2
-```
+3. Verificar que estan los archivos correctos:
 
-El modelo entrenado se guarda en `models/`.
+   dir
 
-### 3. Evaluación
+   Debes ver: train.py, evaluate.py, eda.py, download_data.py,
+              requirements.txt, README.md
 
-```bash
-# Evaluar sobre el CSV completo
-python evaluate.py --data data/amazon_reviews.csv
 
-# Predecir una reseña individual
-python evaluate.py --text "This product exceeded all my expectations, absolutely love it!"
-```
+PASO 1 — INSTALAR LAS DEPENDENCIAS
+=
+
+Ejecutar una sola vez. Si ya lo hiciste antes, puedes saltarlo.
+
+   pip install -r requirements.txt
+
+Esto instala: sentence-transformers, scikit-learn, pandas,
+numpy, matplotlib, seaborn, kaggle y sus dependencias.
+Puede tardar 2-5 minutos dependiendo de la conexion.
+
+Si aparece un aviso de "new release of pip available", ignorarlo.
+No afecta el funcionamiento.
+
+
+PASO 2 — CONFIGURAR EL TOKEN DE KAGGLE
+=
+
+Solo necesitas hacerlo una vez. Si ya lo hiciste, saltalo.
+
+2a. Ve a kaggle.com -> tu foto -> Settings -> API
+    -> Create New Token  (o usa el que ya creaste)
+
+2b. Se descarga un archivo. El token tiene el formato:
+    KGAT_xxxxxxxxxxxxxxxxxxxxxx
+
+2c. Abrir PowerShell y ejecutar estos dos comandos:
+
+    New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.kaggle"
+
+    "TU_TOKEN_AQUI" | Out-File -FilePath "$env:USERPROFILE\.kaggle\access_token" -Encoding ascii
+
+    (Reemplaza TU_TOKEN_AQUI con tu token real, incluyendo las comillas)
+
+2d. Verificar que se creo el archivo:
+
+    dir "$env:USERPROFILE\.kaggle"
+
+    Debes ver el archivo access_token listado ahi.
+
+
+
+PASO 3 — DESCARGAR EL DATASET
+=
+
+   python download_data.py
+
+Que hace:
+- Detecta el token de Kaggle automaticamente
+- Descarga el dataset Amazon Review desde Kaggle
+- Lo guarda como data/amazon_reviews.csv
+
+Tiempo estimado: 1-3 minutos segun la conexion.
+
+Si aparece el mensaje "Detectado archivo access_token.
+Configurando credenciales..." es normal, significa que
+convirtio el token al formato que necesita la libreria.
+
+Al terminar debe aparecer:
+"Dataset listo en data/amazon_reviews.csv"
+
+
+PASO 4 — CORRER EL ANALISIS EXPLORATORIO (EDA)
+=
+
+   python eda.py
+
+Que hace:
+- Lee el CSV descargado
+- Imprime un resumen del dataset en consola
+- Genera 4 graficas y las guarda en la carpeta images/
+
+Graficas generadas:
+- images/rating_distribution.png      (distribucion de estrellas)
+- images/review_length_distribution.png  (longitud de resenas)
+- images/length_vs_rating.png         (scatter longitud vs rating)
+- images/boxplot_length_by_rating.png (boxplot por rating)
+
+Tiempo estimado: 1-2 minutos.
+
+
+PASO 5 — ENTRENAR EL MODELO
+=
+
+Opcion A — Modelo basico (recomendado para empezar):
+
+   python train.py
+
+Opcion B — Especificar modelo diferente:
+
+   python train.py --model gbr
+   python train.py --model rf
+
+Opcion C — Usar un embedder mas grande (mas lento, posiblemente
+           mejor):
+
+   python train.py --embedder sentence-transformers/all-mpnet-base-v2
+
+Que hace:
+- Carga y limpia el CSV
+- Divide en 80% entrenamiento / 20% prueba
+- Descarga el modelo de embeddings (solo la primera vez,
+  luego queda en cache)
+- Genera los embeddings para todos los textos
+- Entrena el regresor Ridge (u otro si se especifica)
+- Imprime MAE y RMSE en consola
+- Guarda el modelo en models/model.pkl
+- Guarda las graficas en results/
+
+ADVERTENCIA: El paso de generar embeddings es el mas lento.
+Con 1.4 millones de resenas puede tardar entre 10 y 40 minutos
+dependiendo del hardware. Es normal que la barra de progreso
+tarde en avanzar al principio.
+
+Al terminar debe aparecer:
+"[Test] MAE=0.xxxx  RMSE=1.xxxx"
+"Entrenamiento completado."
+
+
+PASO 6 — EVALUAR EL MODELO
+=
+
+Opcion A — Predecir una resena individual:
+
+   python evaluate.py --text "This product is amazing, works perfectly!"
+
+   Imprime el rating predicho con su representacion en asteriscos.
+   Ejemplo de salida: "Rating predicho: 4.73  [*****]"
+
+Opcion B — Evaluar sobre todo el CSV:
+
+   python evaluate.py --data data/amazon_reviews.csv
+
+   Calcula MAE y RMSE sobre el dataset completo y guarda las
+   predicciones en results/predictions.csv
+
+
+RESUMEN DE COMANDOS EN ORDEN
+=
+
+cd C:\Users\SIMON\Downloads\star-regressor\star-regressor
+pip install -r requirements.txt
+python download_data.py
+python eda.py
+python train.py
+python evaluate.py --text "Great product, works perfectly!"
+
+
+ESTRUCTURA DE CARPETAS DESPUES DE CORRER TODO
+=
+
+star-regressor/
+├── data/
+│   └── amazon_reviews.csv        <- dataset descargado
+├── images/
+│   ├── rating_distribution.png   <- graficas del EDA
+│   ├── review_length_distribution.png
+│   ├── length_vs_rating.png
+│   └── boxplot_length_by_rating.png
+├── models/
+│   ├── model.pkl                 <- modelo entrenado
+│   ├── scaler.pkl                <- normalizador
+│   ├── embedder_name.txt         <- nombre del embedder usado
+│   └── metrics.json              <- MAE y RMSE guardados
+├── results/
+│   ├── real_vs_predicted.png     <- graficas de evaluacion
+│   ├── error_distribution.png
+│   └── predictions.csv           <- predicciones (si se corre opcion B)
+├── download_data.py
+├── eda.py
+├── train.py
+├── evaluate.py
+├── requirements.txt
+└── README.md
+
+
+
+ERRORES COMUNES Y SOLUCION
+=
+
+ERROR: No such file or directory: requirements.txt
+  -> Estas en la carpeta equivocada. Ejecuta:
+     cd C:\Users\SIMON\Downloads\star-regressor\star-regressor
+
+ERROR: No se encontraron credenciales de Kaggle
+  -> El token no esta configurado. Repite el Paso 2.
+
+ERROR: 403 Forbidden al descargar el dataset
+  -> El token es invalido o expiro. Ve a Kaggle y genera uno nuevo.
+     Repite el Paso 2c con el token nuevo.
+
+ERROR: ModuleNotFoundError: No module named 'sentence_transformers'
+  -> Las dependencias no estan instaladas. Ejecuta el Paso 1.
+
+ERROR: FileNotFoundError: models/model.pkl
+  -> Todavia no has entrenado el modelo. Ejecuta primero el Paso 5.
+
+La barra de progreso de embeddings se quedo quieta
+  -> Es normal. Esta procesando en batches. Espera, no interrumpas.
+
+================================================================
 
 ---
 
